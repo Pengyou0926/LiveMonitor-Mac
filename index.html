@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>魏牌新能源 · 直播作战指挥中心</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f172a'/%3E%3Cpath d='M6 16 L10 16 L14 10 L18 22 L22 16 L26 16' stroke='%230ea5e9' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: "Inter", "Microsoft YaHei", "微软雅黑", system-ui, sans-serif !important; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+        /* ===== 暗色主题（默认） ===== */
+        :root {
+            --bg: #111114; --surface: #1c1c20; --surface-hover: #242428; --card: #27272b; --card-hover: #303035;
+            --text: #e8e8ec; --text-secondary: #a8a8b0; --text-muted: #6e6e78;
+            --border: #3a3a42; --border-hover: #50505a; --accent: #60a5fa; --accent-bg: rgba(96,165,250,0.14);
+            --danger: #f87171; --danger-bg: rgba(248,113,113,0.14); --danger-card: rgba(248,113,113,0.1); --danger-border: rgba(248,113,113,0.45);
+            --warning: #fbbf24; --warning-bg: rgba(251,191,36,0.14); --warning-card: rgba(251,191,36,0.1); --warning-border: rgba(251,191,36,0.4);
+            --success: #34d399; --success-bg: rgba(52,211,153,0.14);
+            --shadow: 0 1px 3px rgba(0,0,0,0.4); --shadow-hover: 0 4px 16px rgba(0,0,0,0.5);
+            --modal-bg: rgba(0,0,0,0.65); --header-bg: rgba(17,17,20,0.88);
+            --blue-mountain-bg: linear-gradient(90deg, rgba(14,165,233,0.15) 0%, var(--card) 70%); --blue-mountain-border: rgba(14,165,233,0.4);
+            --v9x-bg: linear-gradient(90deg, rgba(139,92,246,0.15) 0%, var(--card) 70%); --v9x-border: rgba(139,92,246,0.4);
+            --mocha-bg: linear-gradient(90deg, rgba(236,72,153,0.15) 0%, var(--card) 70%); --mocha-border: rgba(236,72,153,0.4);
+            --mocha: #f472b6; --mocha-accent-bg: rgba(236,72,153,0.14);
+        }
+
+        /* ===== 亮色主题 ===== */
+        body.light {
+            --bg: #f0f0f4; --surface: #ffffff; --surface-hover: #f6f6f8; --card: #ffffff; --card-hover: #f8f8fa;
+            --text: #18181b; --text-secondary: #52525b; --text-muted: #9a9aa4;
+            --border: #d8d8de; --border-hover: #b8b8c0; --accent: #2563eb; --accent-bg: rgba(37,99,235,0.1);
+            --danger: #dc2626; --danger-bg: rgba(220,38,38,0.1); --danger-card: rgba(220,38,38,0.07); --danger-border: rgba(220,38,38,0.4);
+            --warning: #d97706; --warning-bg: rgba(217,119,6,0.1); --warning-card: rgba(217,119,6,0.07); --warning-border: rgba(217,119,6,0.35);
+            --success: #059669; --success-bg: rgba(5,150,105,0.1);
+            --shadow: 0 1px 3px rgba(0,0,0,0.08); --shadow-hover: 0 4px 16px rgba(0,0,0,0.1);
+            --modal-bg: rgba(0,0,0,0.35); --header-bg: rgba(255,255,255,0.88);
+            --blue-mountain-bg: linear-gradient(90deg, rgba(14,165,233,0.1) 0%, var(--card) 70%); --blue-mountain-border: rgba(14,165,233,0.45);
+            --v9x-bg: linear-gradient(90deg, rgba(139,92,246,0.1) 0%, var(--card) 70%); --v9x-border: rgba(139,92,246,0.45);
+            --mocha-bg: linear-gradient(90deg, rgba(236,72,153,0.1) 0%, var(--card) 70%); --mocha-border: rgba(236,72,153,0.45);
+            --mocha: #ec4899; --mocha-accent-bg: rgba(236,72,153,0.1);
+        }
+
+        body { background: var(--bg); color: var(--text); overflow: hidden; transition: background 0.3s, color 0.3s; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); transition: all 0.2s ease; }
+        .card:hover { background: var(--card-hover); border-color: var(--border-hover); box-shadow: var(--shadow-hover); }
+
+        .plan-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); transition: all 0.2s ease; }
+        .plan-card:hover { box-shadow: var(--shadow-hover); }
+        .plan-card.risk-danger { background: var(--danger-card); border-color: var(--danger-border); }
+        .plan-card.risk-danger:hover { background: rgba(248,113,113,0.15); }
+        body.light .plan-card.risk-danger:hover { background: rgba(220,38,38,0.1); }
+        .plan-card.risk-warning { background: var(--warning-card); border-color: var(--warning-border); }
+        .plan-card.risk-warning:hover { background: rgba(251,191,36,0.15); }
+        body.light .plan-card.risk-warning:hover { background: rgba(217,119,6,0.1); }
+
+        .card.offline { opacity: 0.4; filter: grayscale(0.65); transform: scale(0.98); }
+        .card.offline:hover { opacity: 0.55; filter: grayscale(0.45); transform: scale(0.99); }
+        .card.offline .live-dot { background: var(--text-muted) !important; }
+        .card.offline .live-dot::after { display: none; }
+
+        .sidebar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 8px 0 0 8px; }
+        .sidebar.green { background: var(--success); } .sidebar.red { background: var(--danger); } .sidebar.yellow { background: var(--warning); } .sidebar.blue { background: var(--accent); } .sidebar.purple { background: #a78bfa; } .sidebar.pink { background: var(--mocha); } .sidebar.gray { background: var(--text-muted); } .sidebar.gradient-danger { background: linear-gradient(to bottom, var(--danger), #e11d48); } .sidebar.gradient-warning { background: linear-gradient(to bottom, var(--warning), #f97316); }
+
+        .card.blue-mountain { background: var(--blue-mountain-bg); border-color: var(--blue-mountain-border); }
+        .card.v9x-card { background: var(--v9x-bg); border-color: var(--v9x-border); }
+        .card.mocha-card { background: var(--mocha-bg); border-color: var(--mocha-border); }
+
+        .card.risk-high { border-color: rgba(248,113,113,0.55) !important; animation: pulseRisk 2s infinite; }
+        .card.risk-medium { border-color: rgba(251,191,36,0.5) !important; animation: pulseWarning 2.5s infinite; }
+        @keyframes pulseRisk { 0%,100% { border-color: rgba(248,113,113,0.4); } 50% { border-color: rgba(248,113,113,0.8); } }
+        @keyframes pulseWarning { 0%,100% { border-color: rgba(251,191,36,0.35); } 50% { border-color: rgba(251,191,36,0.75); } }
+
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); position: relative; flex-shrink: 0; }
+        .live-dot::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 1.5px solid var(--success); animation: ripple 1.8s infinite; opacity: 0; }
+        @keyframes ripple { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }
+
+        .card.upcoming { border-color: rgba(251,191,36,0.4); background: linear-gradient(90deg, var(--warning-bg), var(--card) 60%); }
+        .region-header { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px); }
+        .region-stripe { width: 3px; height: 18px; border-radius: 2px; margin-right: 10px; }
+
+        .grid-3 { display: grid; gap: 8px; grid-template-columns: 1fr; }
+        @media (min-width: 768px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1280px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+
+        .top-bar { background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; z-index: 50; position: relative; flex-shrink: 0; }
+        .btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 5px; background: transparent; color: var(--text-secondary); }
+        .btn:hover { background: var(--accent-bg); color: var(--accent); }
+        .btn.active { background: var(--accent); color: #fff; border-color: transparent; }
+        .btn.active-danger { background: var(--danger); color: #fff; }
+
+        .theme-toggle { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+        .theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; line-height: 1.5; }
+        .badge-blue { background: var(--accent-bg); color: var(--accent); }
+        .badge-green { background: var(--success-bg); color: var(--success); }
+        .badge-yellow { background: var(--warning-bg); color: var(--warning); }
+        .badge-red { background: var(--danger-bg); color: var(--danger); }
+        .badge-purple { background: rgba(167,139,250,0.14); color: #a78bfa; }
+        .badge-pink { background: rgba(244,114,182,0.14); color: #f472b6; }
+        .badge-gray { background: rgba(113,113,122,0.14); color: var(--text-muted); }
+
+        .stat-cell { padding: 8px 12px; border-radius: 6px; background: var(--surface); text-align: center; }
+        .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 3px; }
+        .stat-value { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .cost-high { color: var(--danger); } .cost-medium { color: var(--warning); } .cost-low { color: var(--success); }
+
+        /* ===== 模态框 ===== */
+        .modal-overlay { position: fixed; inset: 0; background: var(--modal-bg); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+        .modal-box {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+            width: 98%; max-width: 1400px;
+            height: 50vh; min-height: 500px;
+            display: flex; flex-direction: column; overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ===== 手机端响应式 ===== */
+        /* ===== 手机端响应式 ===== */
+        @media (max-width: 768px) {
+            .top-bar { padding: 10px; }
+            .top-bar .btn { padding: 6px 10px; font-size: 12px; }
+            .modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+            .modal-box { width: 100% !important; height: 95vh !important; max-height: 95vh !important; min-height: auto !important; border-radius: 16px 16px 0 0 !important; margin-top: auto !important; }
+            .modal-scroll-area { overflow-y: auto !important; flex-direction: column !important; -webkit-overflow-scrolling: touch; }
+            
+            /* 1. 顶部数据格子排成一排，支持横向滑动，隐藏滚动条 */
+            .header-stats { flex-wrap: nowrap !important; overflow-x: auto !important; gap: 8px !important; margin-top: 10px; width: 100%; justify-content: flex-start !important; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+            .header-stats::-webkit-scrollbar { display: none; }
+            .header-stats > div { flex: 0 0 auto !important; min-width: 75px; padding: 8px !important; background: var(--surface); border-radius: 6px; border: 1px solid var(--border); }
+            
+            /* 2. 面板上下堆叠，修复图表曲线拦截垂直滑动的问题 */
+            .modal-split-row { flex-direction: column !important; overflow-y: auto !important; height: auto !important; }
+            .modal-split-left { width: 100% !important; height: 350px !important; flex: none !important; margin-bottom: 12px !important; }
+            .modal-split-right { width: 100% !important; height: 300px !important; flex: none !important; margin-bottom: 30px !important; touch-action: pan-y !important; /* 关键：强制允许图表区域进行原生上下滑动 */ }
+            
+            .plan-card { padding: 10px 8px !important; }
+            .plan-card .text-\\[13px\\] { font-size: 12px !important; }
+            .stat-cell { padding: 6px 8px !important; }
+            .toast { bottom: 80px !important; width: 90%; text-align: center; }
+        }
+
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3); border: none; transition: all 0.2s; z-index: 100; }
+        .fab:hover { transform: scale(1.08); }
+        .fab-count { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); }
+        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 300; }
+
+        .fancy-scroll::-webkit-scrollbar { width: 5px; } .fancy-scroll::-webkit-scrollbar-track { background: transparent; } .fancy-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .no-scroll::-webkit-scrollbar { display: none; } .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-enter-active, .fade-leave-active { transition: all 0.25s ease; } .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(6px); }
+        .slide-enter-active, .slide-leave-active { transition: all 0.2s ease; } .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateX(12px); }
+        [v-cloak] { display: none; }
+
+        .empty-warn-bar { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); background: var(--danger); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 1.5px; border-radius: 0 3px 3px 0; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 5; }
+        .link-btn { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+        .link-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+        .link-btn img { width: 14px; height: 14px; object-fit: contain; }
+        .time-badge { font-size: 11px; font-weight: 600; font-family: "Inter", monospace !important; padding: 2px 8px; border-radius: 5px; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); }
+        .store-name { font-size: 13px; font-weight: 700; }
+        .douyin-id { font-size: 11px; font-family: "Inter", monospace !important; }
+        .countdown-text { font-size: 12px; font-weight: 700; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+<div id="app" class="h-full flex flex-col" v-cloak>
+
+    <header class="top-bar">
+        <div class="flex items-center gap-3 cursor-pointer select-none">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:var(--accent);">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+                <div class="text-sm font-bold" style="color:var(--text);">直播作战指挥中心</div>
+                <div class="text-[11px] flex items-center gap-1.5" style="color:var(--text-muted);">
+                    <span class="live-dot" style="width:6px;height:6px;"></span>
+                    更新: {{ lastUpdate }}
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-0.5 p-1 rounded-lg" style="background:var(--surface);border:1px solid var(--border);">
+                <button @click="viewMode='region'" :class="viewMode==='region'?'btn active':'btn'">分区视图</button>
+                <button @click="viewMode='monitor'" :class="viewMode==='monitor'?'btn active-danger':'btn'" class="flex items-center gap-1">
+                    风险监控
+                    <span v-if="riskCount>0" class="badge badge-red" style="font-size:10px;padding:1px 6px;">{{ riskCount }}</span>
+                </button>
+            </div>
+
+            <button @click="toggleAutoScroll" :class="autoScroll?'btn active':'btn'">
+                <span v-if="autoScroll" class="w-1.5 h-1.5 rounded-full bg-white mr-1 inline-block"></span>
+                {{ autoScroll?'巡航中':'巡航' }}
+            </button>
+
+            <button class="theme-toggle" @click="toggleTheme" :title="isDark?'切换亮色':'切换暗色'">
+                <svg v-if="isDark" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <svg v-else class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <main ref="scrollContainer" class="flex-1 overflow-y-auto no-scroll p-3" style="background:var(--bg);">
+
+        <div v-if="viewMode==='region'" class="grid-3 pb-20">
+            <template v-for="(regionStores, regionName, idx) in processedData" :key="regionName">
+                <div v-if="!hiddenRegions.has(regionName)" class="flex flex-col gap-2">
+                    <div class="region-header group">
+                        <div class="flex items-center">
+                            <div class="region-stripe" :class="stripeColor(idx)"></div>
+                            <span class="text-[13px] font-bold" style="color:var(--text);">{{ regionName }}</span>
+                            <span class="text-[11px] ml-2 px-2 py-0.5 rounded" style="background:var(--surface-hover);color:var(--text-muted);border:1px solid var(--border);">{{ regionStores.length }} 活跃</span>
+                        </div>
+                        <button @click="toggleRegion(regionName)" class="opacity-0 group-hover:opacity-100 transition-opacity" style="color:var(--text-muted);" title="隐藏">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.11 6.11m3.768 3.768l4.242 4.242m0 0l3.768 3.768M6.11 6.11L3 3m3.11 3.11l4.242 4.242"/></svg>
+                        </button>
+                    </div>
+
+                    <transition-group name="fade">
+                        <div v-for="item in regionStores" :key="item.store.name" @click="showOceanDetails(item, regionName)">
+                            <div v-if="item.isUpcoming" class="card upcoming cursor-pointer mb-1.5 relative overflow-hidden" style="padding:10px 12px;">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-2.5 h-2.5 rounded-full animate-pulse" style="background:var(--warning);"></div>
+                                        <span class="store-name" style="color:var(--text);">{{ item.store.name }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="badge badge-yellow animate-pulse countdown-text">还有 {{ item.countdown }}</span>
+                                        <span class="time-badge">{{ item.timeStr }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-else class="card cursor-pointer mb-1.5 relative overflow-hidden"
+                                 :class="[cardClass(item), item.cons==='未开播'?'offline':'']"
+                                 style="padding:0;">
+                                <div class="sidebar" :class="sidebarColor(item)"></div>
+                                <div v-if="getRiskLevel(item)===2 && parseFloat(cleanVal(item.cost))===0 && item.cons!=='未开播'" class="empty-warn-bar">空耗</div>
+
+                                <div v-if="isBlueMountain(item)" style="position:absolute;right:8px;bottom:-8px;font-size:3rem;font-weight:900;font-style:italic;opacity:0.06;pointer-events:none;color:var(--accent);">蓝山</div>
+                                <div v-if="isV9X(item)" style="position:absolute;right:8px;bottom:-8px;font-size:3rem;font-weight:900;font-style:italic;opacity:0.06;pointer-events:none;color:#a78bfa;">V9X</div>
+                                <div v-if="isMocha(item)" style="position:absolute;right:8px;bottom:-8px;font-size:3rem;font-weight:900;font-style:italic;opacity:0.07;pointer-events:none;color:var(--mocha);">摩卡</div>
+
+                                <div style="padding:8px 12px 8px 14px;">
+                                    <div class="flex items-center justify-between" style="margin-bottom:6px;">
+                                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                            <div class="live-dot"></div>
+                                            <span class="store-name truncate cursor-pointer hover:underline" style="color:var(--text);" @click.stop="copyText(item.store.full_name||item.store.name,'店名')">
+                                                <span v-if="isBlueMountain(item)" style="margin-right:3px;">⛰️</span>
+                                                <span v-if="isV9X(item)" style="margin-right:3px;">⚡</span>
+                                                <span v-if="isMocha(item)" style="margin-right:3px;">☕</span>
+                                                {{ item.store.name }}
+                                            </span>
+                                            <span class="douyin-id truncate cursor-pointer" style="color:var(--text-muted);" @click.stop="copyText(item.store.douyin,'ID')">{{ item.store.douyin }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <a v-if="item.store.room_id" :href="'https://www.autoengine.com/jdc/industry/live/screen?isHideSiderMemu=1&isHideHeader=1&isOpen=1&room_id='+item.store.room_id" target="_blank" @click.stop class="link-btn">
+                                                <img src="https://p3.dcarimg.com/img/tos-cn-i-dcdx/029d7c67fb3042c9a9197081ba5bfc72~noop.png"/>
+                                            </a>
+                                            <a v-if="item.computedUrl" :href="item.computedUrl" target="_blank" @click.stop class="link-btn">
+                                                <img src="https://lf3-ad-platform.byteadverts.com/obj/ad-platform/ad/logo/ico.svg"/>
+                                            </a>
+                                            <span class="time-badge">{{ item.timeStr }}</span>
+                                            <span v-if="item.type" class="badge" :class="typeBadge(item)">{{ item.type }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2">
+                                        <div class="stat-cell flex-1">
+                                            <div class="stat-label">成本</div>
+                                            <div class="stat-value" :class="costColor(item)">{{ item.cost }}</div>
+                                        </div>
+                                        <div class="stat-cell flex-1">
+                                            <div class="stat-label">消耗</div>
+                                            <div class="stat-value" :class="item.cons==='未开播'?'':'cost-low'" style="color:var(--accent);">{{ item.cons }}</div>
+                                        </div>
+                                        <div class="stat-cell" style="min-width:55px;">
+                                            <div class="stat-label">预算</div>
+                                            <div class="stat-value" style="color:var(--text-muted);font-size:13px;">{{ item.budget||'∞' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </transition-group>
+                </div>
+            </template>
+        </div>
+
+        <div v-else class="grid-3 pb-20">
+            <transition-group name="fade">
+                <div v-for="item in monitorStores" :key="item.store.name" @click="showOceanDetails(item,item.regionName)"
+                     class="card cursor-pointer relative overflow-hidden" :class="cardClass(item)" style="padding:0;">
+                    <div class="px-3 py-1.5 text-[11px] font-bold text-white" :style="getRiskLevel(item)===2?'background:var(--danger)':'background:var(--warning)'">
+                        {{ item.regionName }} · {{ getRiskText(item) }}
+                    </div>
+                    <div style="padding:8px 12px 8px 14px;">
+                        <div class="sidebar" :class="sidebarColor(item)"></div>
+                        <div class="flex items-center justify-between" style="margin-bottom:6px;">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div class="live-dot"></div>
+                                <span class="store-name truncate" style="color:var(--text);">{{ item.store.name }}</span>
+                                <span class="douyin-id" style="color:var(--text-muted);">{{ item.store.douyin }}</span>
+                            </div>
+                            <span v-if="item.type" class="badge" :class="typeBadge(item)">{{ item.type }}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="stat-cell flex-1">
+                                <div class="stat-label">成本</div>
+                                <div class="stat-value" :class="costColor(item)">{{ item.cost }}</div>
+                            </div>
+                            <div class="stat-cell flex-1">
+                                <div class="stat-label">消耗</div>
+                                <div class="stat-value" style="color:var(--accent);">{{ item.cons }}</div>
+                            </div>
+                            <div class="stat-cell" style="min-width:55px;">
+                                <div class="stat-label">预算</div>
+                                <div class="stat-value" style="color:var(--text-muted);font-size:13px;">{{ item.budget||'∞' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition-group>
+        </div>
+    </main>
+
+    <div v-if="hiddenRegions.size>0" style="position:fixed;bottom:20px;right:20px;z-index:100;">
+        <transition name="slide">
+            <div v-if="showHiddenMenu" style="position:absolute;bottom:58px;right:0;width:210px;" class="card" @click.stop>
+                <div class="px-3 py-2.5 flex justify-between items-center" style="border-bottom:1px solid var(--border);">
+                    <span class="text-[13px] font-bold" style="color:var(--text);">已隐藏战区</span>
+                    <button @click="hiddenRegions.clear()" class="text-[11px] font-bold" style="color:var(--accent);">全部恢复</button>
+                </div>
+                <div class="max-h-44 overflow-y-auto fancy-scroll">
+                    <div v-for="region in hiddenRegions" :key="region" @click="toggleRegion(region)"
+                         class="px-3 py-2.5 text-[13px] cursor-pointer flex justify-between items-center transition-colors"
+                         style="color:var(--text-secondary);"
+                         @mouseenter="$event.target.style.background='var(--surface-hover)'"
+                         @mouseleave="$event.target.style.background='transparent'">
+                        <span>{{ region }}</span>
+                        <span style="color:var(--text-muted);font-size:11px;">恢复</span>
+                    </div>
+                </div>
+            </div>
+        </transition>
+        <button class="fab" @click="showHiddenMenu=!showHiddenMenu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <span class="fab-count">{{ hiddenRegions.size }}</span>
+        </button>
+    </div>
+
+    <transition name="fade">
+        <div v-if="oceanModal.show" class="modal-overlay" @click="closeModal">
+            <div class="modal-box" @click.stop>
+                
+                <div class="px-5 py-3 flex justify-between items-center shrink-0 border-b border-[var(--border)] relative">
+                    <div class="flex items-center gap-3 w-1/4 shrink-0">
+                        <h3 class="text-[16px] font-bold" style="color:var(--text);">{{ oceanModal.title }}</h3>
+                        <span class="badge badge-blue text-[11px] hidden sm:inline-flex">时段 {{ oceanModal.activeTime }}</span>
+                        <span v-if="oceanModal.loading" class="text-[11px] text-gray-500 animate-pulse absolute left-5 -bottom-5 sm:static">实时同步中...</span>
+                    </div>
+
+                    <div class="flex-1 flex justify-center gap-6 md:gap-12 px-4 header-stats">
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-[var(--text-muted)] font-bold mb-1">实时在线</span>
+                            <span class="text-[18px] font-bold text-[#34d399] leading-none">{{ oceanModal.overview['7'] || '--' }}</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-[var(--text-muted)] font-bold mb-1">商机数</span>
+                            <span class="text-[18px] font-bold text-[#F5A623] leading-none">{{ oceanModal.overview['3'] || '--' }}</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-[var(--text-muted)] font-bold mb-1">进入率</span>
+                            <span class="text-[18px] font-bold text-[#60a5fa] leading-none">{{ oceanModal.overview['12'] || '--' }}</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-[var(--text-muted)] font-bold mb-1">大屏消耗</span>
+                            <span class="text-[18px] font-bold text-[var(--accent)] leading-none">{{ oceanModal.overview['17'] || '--' }}</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-[var(--text-muted)] font-bold mb-1">大屏成本</span>
+                            <span class="text-[18px] font-bold leading-none" :class="costColor({cons: oceanModal.overview['17'], cost: oceanModal.overview['18']})">{{ oceanModal.overview['18'] || '--' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="w-1/4 flex justify-end shrink-0">
+                        <button @click="closeModal" class="link-btn" style="width:30px;height:30px;">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-1 p-4 gap-4 overflow-hidden modal-scroll-area modal-split-row" style="background:var(--bg);">
+                    
+                    <div class="w-1/2 flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden shrink-0 modal-split-left">
+                        <div class="px-4 py-3 bg-[var(--surface-hover)] border-b border-[var(--border)] font-bold text-[13px] flex justify-between items-center">
+                            <span>纵横明细</span>
+                            <div class="flex gap-3 text-[12px] font-normal">
+                                <span class="hidden lg:inline">预算 <span class="font-bold text-green-500">¥{{ totalStats.budgetSum }}</span></span>
+                                <span>消耗 <span class="font-bold text-blue-400">¥{{ totalStats.statCostSum }}</span></span>
+                                <span>成本 <span class="font-bold text-yellow-500">¥{{ totalStats.avgCost }}</span></span>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto fancy-scroll p-3">
+                            <div v-if="oceanModal.error" class="py-10 text-center text-[12px] text-red-500">{{ oceanModal.error }}</div>
+                            <div v-else-if="filteredOceanDetails.length===0 && !oceanModal.loading" class="py-10 text-center text-[12px] text-gray-500">暂无推广计划数据</div>
+                            <div v-else class="flex flex-col gap-2">
+                                <div v-for="plan in filteredOceanDetails" :key="plan.project_name+plan.adv_id" class="plan-card flex justify-between items-center" :class="getPlanCardClass(plan)" style="padding:10px 14px;">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <div class="flex items-center flex-wrap gap-1.5 mb-1.5">
+                                            <span v-if="getPlanRiskLevel(plan)===2 && parseFloat(cleanVal(plan.conv_cost))===0" class="badge badge-red animate-pulse">空耗报警</span>
+                                            <span v-else-if="getPlanRiskLevel(plan)===2" class="badge badge-red">高成本</span>
+                                            <span v-else-if="getPlanRiskLevel(plan)===1" class="badge badge-yellow">偏高</span>
+                                            <span v-if="plan.status_tag" class="badge badge-red">{{ plan.status_tag }}</span>
+                                            <span class="text-[13px] font-semibold truncate" style="color:var(--text);max-width:200px;" :title="plan.project_name">{{ plan.project_name }}</span>
+                                            <a v-if="plan.account_name" :href="getAccountUrl(plan)" target="_blank" class="badge badge-blue cursor-pointer hover:underline text-[11px]">
+                                                {{ plan.account_name }}↗
+                                            </a>
+                                        </div>
+                                        <div class="text-[11px]" style="color:var(--text-muted);">预算: <span style="color:var(--success);font-weight:600;">¥{{ plan.plan_budget }}</span></div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="text-right" style="width:75px;"><div class="stat-label">消耗</div><div class="text-[13px] font-bold font-mono" :class="modalCostColor(plan)">{{ plan.cost }}</div></div>
+                                        <div class="text-right" style="width:75px;border-left:1px solid var(--border);padding-left:10px;margin-left:10px;"><div class="stat-label">成本</div><div class="text-[13px] font-bold font-mono" :class="modalCostColor(plan)">{{ plan.conv_cost }}</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-1/2 flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3 overflow-hidden modal-split-right relative">
+                        <div id="modal-exposure-chart" class="flex-1 w-full min-h-[250px]"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <transition name="fade">
+        <div v-if="toast.show" class="toast">{{ toast.msg }}</div>
+    </transition>
+</div>
+
+<style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+const { createApp, ref, onMounted, computed, reactive, watch, markRaw } = Vue;
+
+createApp({
+    setup(){
+        const rawData=ref({});
+        const lastUpdate=ref('--:--');
+        const isDark=ref(true);
+        const viewMode=ref('region');
+        const autoScroll=ref(false);
+        const scrollContainer=ref(null);
+        const toast=reactive({show:false,msg:''});
+        
+        // 【缓存引擎】：打开页面即后台排队下载数据，实现秒开
+        const storeCache = reactive({});
+        let isPrefetching = false;
+
+        const oceanModal=reactive({
+            show:false, loading:false, title:'', url:'', activeTime:'', currentType:'', error:null, data:{details:[]},
+            roomId: '', overview: {}, trendPoints: [], timer: null
+        });
+        
+        const hiddenRegions=reactive(new Set());
+        const showHiddenMenu=ref(false);
+        const oceanAccounts=ref({});
+
+        // 存放 ECharts 实例
+        let chartInstance = null;
+
+        // 【记忆开关】：图例的选择状态，永久保存在这里
+        const chartLegendState = reactive({
+            '曝光次数': true,
+            '在线人数': false,
+            '进入人数': false
+        });
+
+        watch(isDark,v=>{
+            if(v) document.body.classList.remove('light');
+            else document.body.classList.add('light');
+            if (oceanModal.show && chartInstance) {
+                setTimeout(() => chartInstance.resize(), 50);
+            }
+        });
+
+        const cleanVal=v=>String(v||"0").replace(/[^0-9.]/g,'')||"0";
+
+        const getRiskLevel=item=>{
+            if(item.cons==='未开播')return 0;
+            const cost=parseFloat(cleanVal(item.cost));const cons=parseFloat(cleanVal(item.cons));
+            if(isNaN(cost)||isNaN(cons))return 0;
+            if(cost>150||(cons>150&&cost===0))return 2;
+            if(cost>110||(cons>110&&cost===0))return 1;
+            return 0;
+        };
+
+        const isBlueMountain=item=>item.type&&item.type.includes('蓝山');
+        const isV9X=item=>item.type&&item.type.includes('V9X');
+        const isMocha=item=>item.type&&item.type.includes('摩卡');
+
+        const stripeColor=idx=>{
+            const c=['bg-blue-500','bg-green-500','bg-purple-500','bg-yellow-500','bg-pink-500','bg-cyan-500'];
+            return c[idx%c.length];
+        };
+
+        const cardClass=item=>{
+            const l=getRiskLevel(item);
+            if(l===2)return 'risk-high';
+            if(l===1)return 'risk-medium';
+            if(isBlueMountain(item))return 'blue-mountain';
+            if(isV9X(item))return 'v9x-card';
+            if(isMocha(item))return 'mocha-card';
+            return '';
+        };
+
+        const sidebarColor=item=>{
+            if(item.cons==='未开播')return 'gray';
+            const l=getRiskLevel(item);
+            if(l===2)return 'gradient-danger';
+            if(l===1)return 'gradient-warning';
+            if(isBlueMountain(item))return 'blue';
+            if(isV9X(item))return 'purple';
+            if(isMocha(item))return 'pink';
+            return 'green';
+        };
+
+        const costColor=item=>{
+            if(item.cons==='未开播')return '';
+            const l=getRiskLevel(item);
+            if(l===2)return 'cost-high';
+            if(l===1)return 'cost-medium';
+            return 'cost-low';
+        };
+
+        const typeBadge=item=>{
+            if(item.type.includes('蓝山'))return 'badge-blue';
+            if(item.type.includes('V9X'))return 'badge-purple';
+            if(item.type.includes('摩卡'))return 'badge-pink';
+            return 'badge-green';
+        };
+
+        const fetchData=async()=>{
+            try{const res=await fetch('/api/data');const json=await res.json();rawData.value=json.data;lastUpdate.value=json.last_update||new Date().toLocaleTimeString('en-GB',{hour12:false})}catch{}
+        };
+        const loadOceanAccounts=async()=>{
+            try{const res=await fetch('/ocean_accounts.json');if(res.ok)oceanAccounts.value=await res.json()}catch{}
+        };
+
+        const processedData=computed(()=>{
+            const res={};const now=new Date();
+            const parseT=s=>{if(!s)return null;const[h,m]=s.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d};
+            for(const[reg,stores]of Object.entries(rawData.value)){
+                const live=[];
+                const blueMountainId=oceanAccounts.value[reg]?.['蓝山户'];
+                stores.forEach(s=>{s.slots?.forEach(sl=>{
+                    const start=parseT(sl.start);const end=parseT(sl.end);
+                    const diff=(start-now)/60000;
+                    const isLive=now>=start&&now<=end;
+                    const isUpcoming=start>now&&diff<=15&&diff>=0;
+                    if(isLive||isUpcoming){
+                        let computedUrl=s.url;
+                        if(sl.type&&sl.type.includes('蓝山')&&blueMountainId&&computedUrl){
+                            computedUrl=computedUrl.replace(/aadvid=[^&]+/,'aadvid='+blueMountainId);
+                        }
+                        live.push({store:s,type:sl.type,budget:sl.budget,timeStr:`${sl.start}-${sl.end}`,cons:s.live_consumption,cost:s.live_cost,isUpcoming,countdown:Math.ceil(diff)+'分',computedUrl});
+                    }
+                })});
+                live.sort((a,b)=>{
+                    const gs=i=>{if(i.isUpcoming)return 2;if(i.cons!=='未开播')return 0;return 1};
+                    return gs(a)-gs(b);
+                });
+                if(live.length)res[reg]=live;
+            }
+            return res;
+        });
+
+        // 后台静默预载所有在播门店的大屏数据
+        const prefetchData = async () => {
+            if (isPrefetching) return;
+            isPrefetching = true;
+            
+            const liveStores = [];
+            for (const region in processedData.value) {
+                for (const item of processedData.value[region]) {
+                    if (!item.isUpcoming && item.cons !== '未开播') {
+                        liveStores.push({ item, region });
+                    }
+                }
+            }
+
+            for (const { item, region } of liveStores) {
+                const sn = item.store.name;
+                if (!storeCache[sn]) storeCache[sn] = { ocean: null, overview: null, trend: null };
+
+                const roomId = item.store.room_id;
+                if (roomId) {
+                    fetch(`/api/douyin/overview?room_id=${roomId}`).then(r=>r.json()).then(d=>{
+                        if(d.status===0 && d.data) storeCache[sn].overview = d.data.data_map || {};
+                    }).catch(()=>{});
+
+                    fetch(`/api/douyin/trend?room_id=${roomId}`).then(r=>r.json()).then(d=>{
+                        if(d.status===0 && d.data) storeCache[sn].trend = d.data.points || [];
+                    }).catch(()=>{});
+                }
+
+                let adv='';
+                if(item.computedUrl){const m=item.computedUrl.match(/aadvid=([^&]+)/);if(m)adv=`&adv_id=${m[1]}`}
+                fetch(`/api/ocean/promotion?region=${encodeURIComponent(region)}&keyword=${encodeURIComponent(sn)}${adv}`)
+                    .then(r=>r.json()).then(d=>{
+                        if(d.code===0) storeCache[sn].ocean = d;
+                    }).catch(()=>{});
+
+                // 为了防止拉黑，每个店后台拉取间隔设为400毫秒
+                await new Promise(res => setTimeout(res, 400));
+            }
+            isPrefetching = false;
+        };
+
+        const filteredOceanDetails=computed(()=>{
+            const all=oceanModal.data.details||[];
+            const isBM=(oceanModal.currentType||"").includes('蓝山');
+            return all.filter(p=>{const n=(p.account_name||"").toString();return isBM?n.includes('蓝山'):!n.includes('蓝山')});
+        });
+
+        onMounted(()=>{
+            fetchData().then(() => { prefetchData(); });
+            loadOceanAccounts();
+            // 每隔10秒刷新基础面板，同时更新后台预载池
+            setInterval(() => {
+                fetchData().then(() => { prefetchData(); });
+            }, 10000);
+            // resize 监听只注册一次，避免每次切换门店重复叠加
+            window.addEventListener('resize', () => { if(chartInstance) chartInstance.resize(); });
+        });
+
+        const getPlanRiskLevel=p=>{
+            const cpa=parseFloat(cleanVal(p.conv_cost));const cons=parseFloat(cleanVal(p.cost));
+            if(cpa>170||(cons>170&&cpa===0))return 2;
+            if(cpa>120||(cons>120&&cpa===0))return 1;
+            return 0;
+        };
+
+        const getPlanCardClass=plan=>{
+            const l=getPlanRiskLevel(plan);
+            if(l===2)return 'risk-danger';
+            if(l===1)return 'risk-warning';
+            return '';
+        };
+
+        // ========== ECharts 三维独立Y轴制图 ==========
+        const renderModalChart = (points) => {
+            const chartDom = document.getElementById('modal-exposure-chart');
+            if (!chartDom) return;
+
+            const xData = [];
+            const yExposure = []; // 1 曝光
+            const yOnline = [];   // 2 在线
+            const yEnter = [];    // 5 进入
+
+            points.forEach(point => {
+                const date = new Date(point.timestamp * 1000);
+                xData.push(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+                yExposure.push(parseInt(point.data_map["1"] || 0));
+                yOnline.push(parseInt(point.data_map["2"] || 0));
+                yEnter.push(parseInt(point.data_map["5"] || 0));
+            });
+
+            const option = {
+                backgroundColor: 'transparent',
+                // 图例：使用我们保存在外部 Vue reactive 里的状态
+                legend: {
+                    data: [
+                        { name: '曝光次数', icon: 'circle' },
+                        { name: '在线人数', icon: 'circle' },
+                        { name: '进入人数', icon: 'circle' }
+                    ],
+                    selected: chartLegendState, // 绑定响应式变量
+                    textStyle: { color: '#ccc', fontSize: 12 },
+                    top: 0,
+                    itemGap: 20
+                },
+                tooltip: {
+                    trigger: 'axis', backgroundColor: 'rgba(0, 0, 0, 0.8)', borderColor: '#444', textStyle: { color: '#fff' },
+                    axisPointer: { type: 'line', lineStyle: { color: '#999', type: 'dashed' } }
+                },
+                grid: { left: '2%', right: '2%', bottom: '2%', top: '22%', containLabel: true },
+                // 3个独立的 Y 轴，确保小数据波动可见
+                yAxis: [
+                    { type: 'value', position: 'left', splitLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#F5A623' } },
+                    { type: 'value', position: 'right', splitLine: { show: false }, axisLabel: { color: '#34d399' } },
+                    { type: 'value', position: 'right', offset: 45, splitLine: { show: false }, axisLabel: { color: '#60a5fa' } }
+                ],
+                xAxis: { type: 'category', boundaryGap: false, data: xData, axisLine: { lineStyle: { color: '#555' } }, axisLabel: { color: '#999' } },
+                series: [
+                    {
+                        name: '曝光次数', type: 'line', smooth: true, symbol: 'none', data: yExposure,
+                        yAxisIndex: 0, 
+                        lineStyle: { color: '#F5A623', width: 3 }, itemStyle: { color: '#F5A623' },
+                        markPoint: { symbol: 'circle', symbolSize: 6, itemStyle: { color: '#F5A623' }, data: [{ type: 'max', name: '最大值' }], label: { show: true, position: 'left', distance: 10, color: '#ffffff', fontWeight: 'bold', fontSize: 13, formatter: '曝光 {c} -----' } }
+                    },
+                    {
+                        name: '在线人数', type: 'line', smooth: true, symbol: 'none', data: yOnline,
+                        yAxisIndex: 1, 
+                        lineStyle: { color: '#34d399', width: 3 }, itemStyle: { color: '#34d399' },
+                        markPoint: { symbol: 'circle', symbolSize: 6, itemStyle: { color: '#34d399' }, data: [{ type: 'max', name: '最大值' }], label: { show: true, position: 'left', distance: 10, color: '#ffffff', fontWeight: 'bold', fontSize: 13, formatter: '在线 {c} -----' } }
+                    },
+                    {
+                        name: '进入人数', type: 'line', smooth: true, symbol: 'none', data: yEnter,
+                        yAxisIndex: 2, 
+                        lineStyle: { color: '#60a5fa', width: 3 }, itemStyle: { color: '#60a5fa' },
+                        markPoint: { symbol: 'circle', symbolSize: 6, itemStyle: { color: '#60a5fa' }, data: [{ type: 'max', name: '最大值' }], label: { show: true, position: 'left', distance: 10, color: '#ffffff', fontWeight: 'bold', fontSize: 13, formatter: '进入 {c} -----' } }
+                    }
+                ]
+            };
+
+            if (!chartInstance) {
+                chartInstance = markRaw(echarts.init(chartDom));
+                
+                // 【核心记忆修复】：当用户手动点击图例时，更新 Vue 的响应式对象
+                chartInstance.on('legendselectchanged', (params) => {
+                    chartLegendState[params.name] = params.selected[params.name];
+                });
+            }
+            
+            // notMerge: true 确保每次轮询刷新时完整替换数据，避免旧状态残留导致线条消失
+            chartInstance.setOption(option, { notMerge: true });
+            setTimeout(() => { if (chartInstance) chartInstance.resize(); }, 100);
+        };
+
+        const closeModal = () => {
+            oceanModal.show = false;
+            if (oceanModal.timer) {
+                clearInterval(oceanModal.timer);
+                oceanModal.timer = null;
+            }
+            // 【重要】：弹窗隐藏时 DOM 被销毁，必须 dispose，否则下次报错
+            if (chartInstance) {
+                chartInstance.dispose();
+                chartInstance = null;
+            }
+        };
+
+        return {
+            isDark,viewMode,autoScroll,lastUpdate,toast,oceanModal,scrollContainer,processedData,
+            hiddenRegions,showHiddenMenu,filteredOceanDetails,
+            cleanVal,isBlueMountain,isV9X,isMocha,stripeColor,cardClass,sidebarColor,costColor,typeBadge,
+            getPlanRiskLevel,getPlanCardClass,closeModal,
+            toggleRegion:name=>{if(hiddenRegions.has(name))hiddenRegions.delete(name);else hiddenRegions.add(name)},
+            totalStats:computed(()=>{
+                const plans=filteredOceanDetails.value;let b=0,c=0,n=0;
+                plans.forEach(p=>{b+=parseFloat(cleanVal(p.plan_budget));c+=parseFloat(cleanVal(p.cost));n+=parseInt(cleanVal(p.convert_cnt)||"0")});
+                return{budgetSum:b.toFixed(0),statCostSum:c.toFixed(2),avgCost:n>0?(c/n).toFixed(2):"0.00"};
+            }),
+            riskCount:computed(()=>{let c=0;for(const r in processedData.value)c+=processedData.value[r].filter(i=>getRiskLevel(i)>0).length;return c}),
+            monitorStores:computed(()=>{
+                let l=[];
+                for(const[r,d]of Object.entries(processedData.value))d.forEach(i=>{if(getRiskLevel(i)>0)l.push({...i,regionName:r})});
+                return l.sort((a,b)=>getRiskLevel(b)-getRiskLevel(a));
+            }),
+            getRiskLevel,
+            getRiskText:i=>getRiskLevel(i)===2?'⚠ 高危':'⚡ 注意',
+            toggleTheme:()=>isDark.value=!isDark.value,
+            toggleAutoScroll:()=>{
+                autoScroll.value=!autoScroll.value;
+                if(autoScroll.value){
+                    window._si=setInterval(()=>{const el=scrollContainer.value;if(!el)return;el.scrollTop+=1;if(el.scrollTop+el.clientHeight>=el.scrollHeight)el.scrollTop=0},50);
+                }else clearInterval(window._si);
+            },
+            
+            showOceanDetails: (item, regionName) => {
+                const currentStoreName = item.store.name; // 记录当前要打开的店
+                
+                oceanModal.title = currentStoreName;
+                oceanModal.url = item.computedUrl;
+                oceanModal.activeTime = item.timeStr;
+                oceanModal.currentType = item.type || '常规';
+                oceanModal.roomId = item.store.room_id || '';
+                oceanModal.show = true;
+
+                // 【绝杀串台 BUG】：点开的瞬间直接清空面板所有数据和画布！
+                oceanModal.overview = {};
+                oceanModal.trendPoints = [];
+                oceanModal.data = {details:[]};
+                oceanModal.error = null;
+                // dispose 而非 clear，确保切换门店时图表完全重建，避免图例状态残留导致线条消失
+                if (chartInstance) {
+                    chartInstance.dispose();
+                    chartInstance = null;
+                }
+
+                // 【秒开】：先去预载缓存里拿数据
+                const cache = storeCache[currentStoreName];
+                let hasCache = false;
+                if (cache) {
+                    if (cache.overview && Object.keys(cache.overview).length > 0) { 
+                        oceanModal.overview = cache.overview; hasCache = true; 
+                    }
+                    if (cache.trend && cache.trend.length > 0) { 
+                        oceanModal.trendPoints = cache.trend; setTimeout(() => renderModalChart(cache.trend), 50); hasCache = true; 
+                    }
+                    if (cache.ocean && cache.ocean.details) { 
+                        oceanModal.data = cache.ocean; hasCache = true; 
+                    }
+                }
+
+                const fetchModalData = async (isBackground = false) => {
+                    // 如果没缓存，就显示转圈动画
+                    if (!isBackground && !hasCache) oceanModal.loading = true; 
+
+                    try {
+                        let adv='';
+                        if(item.computedUrl){const m=item.computedUrl.match(/aadvid=([^&]+)/);if(m)adv=`&adv_id=${m[1]}`}
+
+                        const promises = [
+                            fetch(`/api/ocean/promotion?region=${encodeURIComponent(regionName)}&keyword=${encodeURIComponent(currentStoreName)}${adv}`)
+                                .then(r=>r.json()).catch(()=>null),
+                            oceanModal.roomId ? fetch(`/api/douyin/overview?room_id=${oceanModal.roomId}`)
+                                .then(r=>r.json()).catch(()=>null) : Promise.resolve(null),
+                            oceanModal.roomId ? fetch(`/api/douyin/trend?room_id=${oceanModal.roomId}`)
+                                .then(r=>r.json()).catch(()=>null) : Promise.resolve(null)
+                        ];
+
+                        const [oceanRes, overviewRes, trendRes] = await Promise.all(promises);
+
+                        // 【核心安全锁】：如果网络卡了，此时用户已经关了弹窗或点了别的店，丢弃这批数据！
+                        if (oceanModal.title !== currentStoreName) return;
+
+                        if(oceanRes && oceanRes.code===0) oceanModal.data = oceanRes;
+                        else if (!isBackground && oceanRes && oceanRes.msg) oceanModal.error = oceanRes.msg;
+
+                        if(overviewRes && overviewRes.status === 0 && overviewRes.data) {
+                            oceanModal.overview = overviewRes.data.data_map || {};
+                        }
+
+                        if(trendRes && trendRes.status === 0 && trendRes.data) {
+                            oceanModal.trendPoints = trendRes.data.points || [];
+                            setTimeout(() => { renderModalChart(oceanModal.trendPoints); }, 50);
+                        }
+                    } catch(e) {
+                        if(!isBackground && oceanModal.title === currentStoreName) oceanModal.error = "接口超时或报错";
+                    } finally {
+                        if(!isBackground && oceanModal.title === currentStoreName) oceanModal.loading = false;
+                    }
+                };
+
+                // 首次强制拉取
+                fetchModalData(false);
+
+                if (oceanModal.timer) clearInterval(oceanModal.timer);
+                
+                // 【加速刷新】：你盯着这个面板时，每 3 秒刷新一次！
+                oceanModal.timer = setInterval(() => fetchModalData(true), 5000);
+            },
+            
+            copyText:(t)=>{navigator.clipboard.writeText(t);toast.msg=`已复制: ${t}`;toast.show=true;setTimeout(()=>toast.show=false,2000)},
+            modalCostColor:p=>{const c=parseFloat(cleanVal(p.conv_cost));return c>170?'cost-high':c>120?'cost-medium':'cost-low'},
+            getAccountUrl:plan=>{
+                if(oceanModal.url&&oceanModal.url.indexOf('aadvid=')!==-1)return oceanModal.url.replace(/aadvid=[^&]+/,'aadvid='+plan.adv_id);
+                const cn=oceanModal.title.replace(/[\[\]【】]/g,'');
+                return`https://ad.oceanengine.com/promotion/promote-manage/project?aadvid=${plan.adv_id}&filter_keyword=${encodeURIComponent('"'+cn+'"')}&filter_search_type=${encodeURIComponent('"8"')}`;
+            }
+
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

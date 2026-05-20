@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>直播数据后台管理</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f8fafc'/%3E%3Crect x='6' y='6' width='20' height='20' rx='2' stroke='%233b82f6' stroke-width='2' fill='none'/%3E%3Cline x1='6' y1='12' x2='26' y2='12' stroke='%233b82f6' stroke-width='2'/%3E%3Cline x1='14' y1='12' x2='14' y2='26' stroke='%23cbd5e1' stroke-width='2'/%3E%3C/svg%3E">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            font-family: "Inter", "Microsoft YaHei", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e8eef5 50%, #f5f7fa 100%);
+            min-height: 100vh;
+            overscroll-behavior-y: contain;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .shadow-fluent {
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.08), 0 12px 24px rgba(0,0,0,0.08), 0 24px 48px rgba(0,0,0,0.06);
+        }
+
+        .shadow-fluent-sm {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .transition-fluent {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-fluent {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            box-shadow: 0 2px 4px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .btn-fluent:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            box-shadow: 0 4px 12px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-fluent:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-color: #cbd5e1;
+        }
+
+        /* ===== Desktop Table ===== */
+        .excel-table {
+            border-collapse: separate;
+            width: 100%;
+            background: white;
+            font-size: 13px;
+            table-layout: fixed;
+            border-radius: 12px;
+            overflow: hidden;
+            border-spacing: 0;
+        }
+
+        .excel-table thead tr:first-child th:first-child { border-top-left-radius: 12px; }
+        .excel-table thead tr:first-child th:last-child { border-top-right-radius: 12px; }
+        .excel-table tbody tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+        .excel-table tbody tr:last-child td:last-child { border-bottom-right-radius: 12px; }
+
+        .excel-table th {
+            background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            font-size: 12px;
+            height: 48px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .excel-table td {
+            border-bottom: 1px solid #cbd5e1;
+            border-right: 1px solid #f1f5f9;
+            height: 52px;
+            padding: 0;
+            transition: all 0.2s ease;
+        }
+
+        .excel-table tbody tr:hover td {
+            background-color: rgba(99,102,241,0.04) !important;
+        }
+
+        .excel-table input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 0 12px;
+            background: transparent;
+            font-size: 13px;
+        }
+
+        .excel-table input:focus {
+            background-color: rgba(99,102,241,0.06);
+            box-shadow: inset 0 0 0 2px rgba(99,102,241,0.2);
+        }
+
+        /* ===== Mobile Card Layout ===== */
+        .mobile-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-card.modified {
+            border-left: 4px solid #f97316;
+        }
+
+        .mobile-card-header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .mobile-card-body {
+            padding: 12px 16px;
+        }
+
+        .mobile-card-field {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8fafc;
+            gap: 8px;
+        }
+
+        .mobile-card-field:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-card-label {
+            font-size: 11px;
+            color: #94a3b8;
+            min-width: 48px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .mobile-card-value {
+            flex: 1;
+            font-size: 13px;
+            color: #334155;
+            min-width: 0;
+        }
+
+        .mobile-card-value input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 13px;
+            color: #334155;
+            padding: 4px 0;
+        }
+
+        .mobile-card-actions {
+            display: flex;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .mobile-card-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 44px;
+        }
+
+        .mobile-card-actions button:not(:last-child) {
+            border-right: 1px solid #f1f5f9;
+        }
+
+        .mobile-card-actions button:active {
+            background: #f8fafc;
+        }
+
+        /* ===== Drag Handle ===== */
+        .drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            touch-action: none;
+            transition: all 0.2s ease;
+        }
+
+        .drag-handle:hover {
+            color: #6366f1;
+            background: rgba(99,102,241,0.08);
+        }
+
+        .sortable-ghost {
+            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)) !important;
+            opacity: 0.8;
+        }
+
+        .sortable-ghost .mobile-card {
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(99,102,241,0.2);
+        }
+
+        /* ===== Modified Row ===== */
+        .modified-row td {
+            background-color: rgba(251,146,60,0.08) !important;
+        }
+
+        .modified-row td:first-child {
+            border-left: 4px solid #f97316 !important;
+        }
+
+        .unsaved-indicator {
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse-orange 2s infinite;
+            box-shadow: 0 0 8px rgba(249,115,22,0.5);
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        /* ===== Modal ===== */
+        .modal-overlay {
+            background: linear-gradient(135deg, rgba(15,23,42,0.6), rgba(30,41,59,0.8));
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 24px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        /* ===== Time Grid ===== */
+        .time-grid-container {
+            display: grid;
+            grid-template-columns: repeat(48, 1fr);
+            gap: 2px;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            border: 1px solid #cbd5e1;
+            padding: 2px;
+            border-radius: 8px;
+        }
+
+        .grid-cell {
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            aspect-ratio: 1 / 1.8;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.15s ease;
+        }
+
+        .grid-cell:hover {
+            background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+            transform: scaleY(1.1);
+        }
+
+        .grid-cell.active {
+            background: linear-gradient(180deg, #6366f1, #4f46e5);
+            box-shadow: 0 0 8px rgba(99,102,241,0.4);
+            transform: scaleY(1.1);
+        }
+
+        .scale-row {
+            display: flex;
+            width: 100%;
+            margin-top: 8px;
+            justify-content: space-between;
+            padding: 0 2px;
+        }
+
+        .scale-item {
+            flex: 1;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            position: relative;
+            height: 14px;
+        }
+
+        .scale-item span {
+            position: absolute;
+            left: 0;
+            transform: translateX(-50%);
+            top: 0;
+        }
+
+        .scale-item::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 0;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 6px;
+            background: #cbd5e1;
+        }
+
+        /* ===== Type Button ===== */
+        .type-btn {
+            flex: 1;
+            padding: 10px 12px;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            min-height: 44px;
+        }
+
+        .type-btn:first-child { border-radius: 8px 0 0 8px; }
+        .type-btn:last-child { border-radius: 0 8px 8px 0; }
+
+        /* 高山 → 绿色 */
+        .type-btn.active-green {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-color: #10b981;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.35);
+        }
+        /* 蓝山 → 蓝色 */
+        .type-btn.active-blue {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-color: #3b82f6;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.35);
+        }
+        /* V9X → 黄色 */
+        .type-btn.active-yellow {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border-color: #f59e0b;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.35);
+        }
+        /* 摩卡 → 粉色 */
+        .type-btn.active-pink {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            color: white;
+            border-color: #ec4899;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(236,72,153,0.35);
+        }
+
+        /* ===== Region Card ===== */
+        .region-card {
+            background: linear-gradient(180deg, #ffffff, #fafbfc);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        .region-card-header {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .search-input {
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            border: 1px solid #e2e8f0;
+        }
+
+        .search-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .badge-primary {
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+            border: 1px solid rgba(99,102,241,0.2);
+            color: #4f46e5;
+        }
+
+        .empty-state {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 2px dashed #e2e8f0;
+        }
+
+        .slot-card {
+            background: linear-gradient(180deg, #ffffff, #fafbfc);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .slot-card:hover {
+            border-color: #c7d2fe;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.1);
+        }
+
+        .link-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(16,185,129,0.3);
+            min-height: 36px;
+        }
+
+        .link-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+        }
+
+        .link-btn:disabled {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .link-btn:disabled:hover {
+            transform: none;
+        }
+
+        .link-btn-yellow {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(245,158,11,0.3);
+            min-height: 36px;
+        }
+
+        .link-btn-yellow:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-1px);
+        }
+
+        .link-btn-yellow:disabled {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* ===== Mobile-specific ===== */
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: env(safe-area-inset-bottom, 0);
+            }
+
+            .desktop-table { display: none !important; }
+            .mobile-cards { display: block !important; }
+
+            .mobile-bottom-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255,255,255,0.95);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-top: 1px solid #e2e8f0;
+                padding: 12px 16px;
+                padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+                z-index: 50;
+                box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+            }
+
+            .modal-content {
+                border-radius: 20px 20px 0 0 !important;
+                max-height: 95vh !important;
+                margin-top: auto !important;
+            }
+
+            .modal-overlay {
+                align-items: flex-end !important;
+            }
+
+            .region-card {
+                border-radius: 16px !important;
+            }
+
+            .region-card-header {
+                padding: 14px 16px !important;
+            }
+
+            /* Collapsible animation */
+            .region-body {
+                overflow: hidden;
+                transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .region-body.collapsed {
+                max-height: 0 !important;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-cards { display: none !important; }
+            .desktop-table { display: block !important; }
+            .mobile-bottom-bar { display: none !important; }
+            .mobile-only { display: none !important; }
+        }
+
+        /* ===== Collapse Chevron ===== */
+        .collapse-chevron {
+            transition: transform 0.3s ease;
+        }
+
+        .collapse-chevron.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* ===== Custom Select for Mobile Time Picker ===== */
+        .custom-select-wrapper {
+            position: relative;
+        }
+        
+        .custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #334155;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .custom-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .select-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        /* ===== Animations ===== */
+        @keyframes slide-up {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .animate-slide-up {
+            animation: slide-up 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-fade-in {
+            animation: fade-in 0.2s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-2 md:p-6">
+    <div id="app" class="max-w-[1500px] mx-auto">
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-5 glass rounded-2xl shadow-fluent p-3 md:p-5 sticky top-2 z-40 gap-3 md:gap-0">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-fluent-sm flex-shrink-0">
+                    <i class="fa fa-bar-chart text-white text-base md:text-lg"></i>
+                </div>
+                <div class="flex flex-col flex-1">
+                    <h1 class="text-base md:text-lg font-bold text-slate-800">直播大屏数据管理</h1>
+                    <p v-if="hasUnsavedChanges" class="text-xs font-medium text-orange-500 flex items-center animate-pulse">
+                        <span class="unsaved-indicator"></span>有未保存的修改
+                    </p>
+                </div>
+                <button @click="saveData" :disabled="saving"
+                    class="md:hidden btn-fluent w-10 h-10 rounded-xl text-white flex items-center justify-center flex-shrink-0"
+                    :class="{ 'opacity-70': saving }">
+                    <i v-if="saving" class="fa fa-spinner fa-spin"></i>
+                    <i v-else class="fa fa-save"></i>
+                </button>
+            </div>
+
+            <div class="flex gap-3 items-center w-full md:w-auto">
+                <div class="relative flex-1 md:flex-none" style="min-width: 200px;">
+                    <input type="text" v-model="searchQuery" placeholder="搜索门店、抖音号..."
+                        class="search-input w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none transition-fluent">
+                    <i class="fa fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <button v-if="searchQuery" @click="searchQuery=''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition p-1">
+                        <i class="fa fa-times-circle"></i>
+                    </button>
+                </div>
+
+                <button @click="saveData" :disabled="saving"
+                    class="hidden md:flex btn-fluent px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-fluent items-center gap-2 shadow-fluent-sm"
+                    :class="{ 'opacity-70 cursor-not-allowed': saving }">
+                    <i v-if="saving" class="fa fa-spinner fa-spin"></i>
+                    <i v-else class="fa fa-save"></i>
+                    <span>{{ hasUnsavedChanges ? '保存修改' : '保存' }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div v-if="hasLoaded" class="space-y-4 md:space-y-5 pb-24 md:pb-20">
+            <div v-if="searchQuery" class="bg-amber-50/80 backdrop-blur-sm border border-amber-200 px-4 py-3 rounded-xl flex items-center gap-2">
+                <i class="fa fa-info-circle text-amber-500"></i>
+                <span class="text-amber-700 text-sm font-medium">搜索模式下不可排序</span>
+            </div>
+
+            <div v-for="(rows, regionName) in filteredData" :key="regionName"
+                class="region-card rounded-2xl overflow-hidden shadow-fluent-sm transition-fluent">
+
+                <div class="region-card-header px-4 md:px-5 py-3 md:py-4 flex justify-between items-center"
+                     @click="isMobile && toggleRegion(regionName)">
+                    <div class="flex items-center gap-3">
+                        <i class="fa fa-chevron-down text-slate-400 text-xs collapse-chevron mobile-only"
+                           :class="{ 'collapsed': collapsedRegions.has(regionName) }"></i>
+                        <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center border border-indigo-200 flex-shrink-0">
+                            <i class="fa fa-building-o text-indigo-600 text-sm md:text-base"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 text-base md:text-lg">{{ regionName }}</span>
+                            <span class="badge-primary ml-2 text-xs px-2 py-0.5 rounded-full font-medium">{{ rows.length }}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click.stop="addRow(regionName)"
+                            class="btn-fluent px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium text-white flex items-center gap-1.5 transition-fluent shadow-fluent-sm min-h-[36px]">
+                            <i class="fa fa-plus"></i>
+                            <span class="hidden md:inline">添加门店</span>
+                        </button>
+                        <button @click.stop="deleteRegion(regionName)"
+                            class="btn-secondary px-3 py-2 rounded-lg text-xs md:text-sm font-medium text-red-500 flex items-center gap-1.5 transition-fluent min-h-[36px]">
+                            <i class="fa fa-trash-o"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="region-body" :class="{ 'collapsed': isMobile && collapsedRegions.has(regionName) }"
+                     :style="{ maxHeight: (isMobile && collapsedRegions.has(regionName)) ? '0' : (rows.length * 200 + 100) + 'px' }">
+                    
+                    <div class="p-4 desktop-table">
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th v-if="!searchQuery" class="w-12"><i class="fa fa-bars"></i></th>
+                                    <th class="w-[18%]">
+                                        <div class="flex items-center justify-center gap-1"><i class="fa fa-tag"></i><span>门店名称</span></div>
+                                    </th>
+                                    <th class="w-[15%]">
+                                        <div class="flex items-center justify-center gap-1"><i class="fa fa-video-camera"></i><span>抖音号</span></div>
+                                    </th>
+                                    <th class="w-[18%]">
+                                        <div class="flex items-center justify-center gap-1"><i class="fa fa-clock-o"></i><span>时段配置</span></div>
+                                    </th>
+                                    <th class="w-[18%]">
+                                        <div class="flex items-center justify-center gap-1"><i class="fa fa-money"></i><span>预算</span></div>
+                                    </th>
+                                    <th class="w-[22%] md:w-32">
+                                        <div class="flex items-center justify-center gap-1"><i class="fa fa-external-link"></i><span>快速跳转</span></div>
+                                    </th>
+                                    <th class="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody :ref="(el) => initSortable(el, regionName)">
+                                <tr v-for="(item, index) in rows" :key="item._id"
+                                    :class="{ 'modified-row': modifiedSet.has(item._id) }" class="transition-fluent">
+                                    <td v-if="!searchQuery" class="text-center bg-slate-50/50">
+                                        <div class="drag-handle h-full"><i class="fa fa-bars"></i></div>
+                                    </td>
+                                    <td class="py-2">
+                                        <div class="flex flex-col gap-0.5 px-3">
+                                            <input type="text" v-model="item.name" @input="markDirty(item)" class="font-bold text-slate-700 bg-transparent border-none outline-none p-0 h-auto" placeholder="门店简称">
+                                            <input type="text" v-model="item.full_name" @input="markDirty(item)" class="text-xs text-slate-400 bg-transparent border-none outline-none p-0 h-auto" placeholder="门店全称">
+                                        </div>
+                                    </td>
+                                    <td><input type="text" v-model="item.douyin" @input="markDirty(item)" class="text-slate-600 font-mono text-xs" placeholder="抖音号"></td>
+                                    <td @click="openEditModal(item, regionName)" class="cursor-pointer">
+                                        <div class="w-full px-3 text-xs leading-relaxed text-right">
+                                            <div v-for="(line, idx) in (item.time || '').split(/\s{2,}/).filter(Boolean)" :key="idx" 
+                                                 class="py-0.5"
+                                                 :class="line.includes('蓝山') ? 'text-blue-500 font-bold' : line.includes('V9X') ? 'text-yellow-500 font-bold' : line.includes('摩卡') ? 'text-pink-500 font-bold' : 'text-emerald-600 font-bold'">
+                                                {{ line }}
+                                            </div>
+                                            <div v-if="!item.time || item.time.trim() === ''" class="text-slate-400 font-normal">点击配置</div>
+                                        </div>
+                                    </td>
+                                    <td @click="openEditModal(item, regionName)" class="cursor-pointer">
+                                        <div class="w-full px-3 text-xs leading-relaxed font-mono font-bold text-slate-700">
+                                            <template v-if="item.budget"><div v-for="(b, idx) in item.budget.toString().split('/')" :key="idx" class="py-0.5">{{ b.trim() }}</div></template>
+                                            <div v-else class="text-slate-400 font-normal font-sans">¥0</div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center gap-2 px-2">
+                                            <button @click="handleUrlClick(item, regionName, '高山')" :disabled="!item.url || !item.url.trim()" class="link-btn" :title="item.url || '未配置URL'">
+                                                <i class="fa fa-home"></i><span>高山</span>
+                                            </button>
+                                            <button @click="handleUrlClick(item, regionName, 'V9X')" :disabled="!item.url || !item.url.trim()" class="link-btn-yellow" :title="item.url || '未配置URL'">
+                                                <i class="fa fa-bolt"></i><span>V9X</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <button @click="deleteRow(regionName, item)" class="text-slate-400 hover:text-red-500 p-2 transition-colors rounded-lg hover:bg-red-50"><i class="fa fa-times"></i></button>
+                                    </td>
+                                </tr>
+                                <tr v-if="rows.length === 0">
+                                    <td :colspan="!searchQuery ? 7 : 6" class="text-center py-10 text-slate-400 text-sm">
+                                        <div class="flex flex-col items-center gap-2"><i class="fa fa-inbox text-2xl"></i><span>暂无门店数据</span></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-3 mobile-cards space-y-3" :ref="(el) => initSortableMobile(el, regionName)">
+                        <div v-for="(item, index) in rows" :key="item._id" class="sortable-item" :data-id="item._id">
+                            <div class="mobile-card" :class="{ 'modified': modifiedSet.has(item._id) }">
+                                <div class="mobile-card-header">
+                                    <div v-if="!searchQuery" class="drag-handle flex-shrink-0" style="width: 28px; height: 28px;">
+                                        <i class="fa fa-bars text-sm"></i>
+                                    </div>
+                                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa fa-home text-indigo-500 text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" v-model="item.name" @input="markDirty(item)"
+                                            class="font-bold text-slate-800 text-sm w-full bg-transparent border-none outline-none p-0"
+                                            placeholder="门店简称">
+                                        <input type="text" v-model="item.full_name" @input="markDirty(item)"
+                                            class="text-xs text-slate-400 w-full bg-transparent border-none outline-none p-0 mt-0.5"
+                                            placeholder="门店全称">
+                                    </div>
+                                </div>
+
+                                <div class="mobile-card-body">
+                                    <div class="mobile-card-field">
+                                        <span class="mobile-card-label"><i class="fa fa-video-camera text-indigo-400"></i></span>
+                                        <div class="mobile-card-value">
+                                            <input type="text" v-model="item.douyin" @input="markDirty(item)" placeholder="抖音号" class="font-mono text-xs">
+                                        </div>
+                                    </div>
+
+                                    <div class="mobile-card-field" @click="openEditModal(item, regionName)">
+                                        <span class="mobile-card-label"><i class="fa fa-clock-o text-indigo-400"></i></span>
+                                        <div class="mobile-card-value flex-1 min-w-0">
+                                            <template v-if="item.time && item.time.trim()">
+                                                <div v-for="(line, idx) in item.time.split(/\s{2,}/).filter(Boolean)" :key="idx"
+                                                    class="text-xs py-0.5 truncate"
+                                                    :class="line.includes('蓝山') ? 'text-blue-500 font-bold' : line.includes('V9X') ? 'text-yellow-500 font-bold' : line.includes('摩卡') ? 'text-pink-500 font-bold' : 'text-emerald-600 font-bold'">
+                                                    {{ line }}
+                                                </div>
+                                            </template>
+                                            <span v-else class="text-xs text-slate-400">点击配置时段</span>
+                                        </div>
+                                        <i class="fa fa-chevron-right text-slate-300 text-xs flex-shrink-0"></i>
+                                    </div>
+
+                                    <div class="mobile-card-field" @click="openEditModal(item, regionName)">
+                                        <span class="mobile-card-label"><i class="fa fa-rmb text-indigo-400"></i></span>
+                                        <div class="mobile-card-value">
+                                            <template v-if="item.budget">
+                                                <span class="text-sm font-mono font-bold text-slate-700">{{ item.budget }}</span>
+                                            </template>
+                                            <span v-else class="text-xs text-slate-400">预算未设</span>
+                                        </div>
+                                        <i class="fa fa-chevron-right text-slate-300 text-xs flex-shrink-0"></i>
+                                    </div>
+                                </div>
+
+                                <div class="mobile-card-actions">
+                                    <button @click="handleUrlClick(item, regionName, '高山')" 
+                                        class="text-emerald-600" :class="{ 'opacity-40': !item.url || !item.url.trim() }">
+                                        <i class="fa fa-home"></i>
+                                        <span>高山</span>
+                                    </button>
+                                    <button @click="handleUrlClick(item, regionName, 'V9X')" 
+                                        class="text-yellow-600" :class="{ 'opacity-40': !item.url || !item.url.trim() }">
+                                        <i class="fa fa-bolt"></i>
+                                        <span>V9X</span>
+                                    </button>
+                                    <button @click="openEditModal(item, regionName)" class="text-indigo-600">
+                                        <i class="fa fa-edit"></i>
+                                        <span>编辑</span>
+                                    </button>
+                                    <button @click="deleteRow(regionName, item)" class="text-red-400">
+                                        <i class="fa fa-trash-o"></i>
+                                        <span>删除</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="rows.length === 0" class="py-10 text-center text-slate-400 text-sm">
+                            <div class="flex flex-col items-center gap-2"><i class="fa fa-inbox text-2xl"></i><span>暂无门店数据</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="!searchQuery"
+                class="empty-state py-6 rounded-xl text-slate-500 cursor-pointer hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/50 transition-fluent"
+                @click="addRegion">
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center"><i class="fa fa-plus-circle text-xl"></i></div>
+                    <span class="text-sm font-medium">添加新大区</span>
+                </div>
+            </div>
+        </div>
+
+        <div v-else class="flex flex-col items-center justify-center py-20">
+            <div class="relative">
+                <div class="w-16 h-16 rounded-full border-4 border-indigo-100"></div>
+                <div class="w-16 h-16 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin absolute top-0"></div>
+            </div>
+            <p class="mt-4 text-slate-500 font-medium">数据加载中...</p>
+        </div>
+
+        <div class="mobile-bottom-bar" v-if="hasLoaded">
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <p v-if="hasUnsavedChanges" class="text-xs text-orange-500 font-medium flex items-center gap-1">
+                        <span class="unsaved-indicator"></span>有未保存的修改
+                    </p>
+                    <p v-else class="text-xs text-slate-400">所有更改已保存</p>
+                </div>
+                <button @click="saveData" :disabled="saving"
+                    class="btn-fluent px-6 py-3 rounded-xl text-sm font-bold text-white flex items-center gap-2 min-h-[44px]"
+                    :class="{ 'opacity-70': saving }">
+                    <i v-if="saving" class="fa fa-spinner fa-spin"></i>
+                    <i v-else class="fa fa-save"></i>
+                    <span>{{ hasUnsavedChanges ? '保存修改' : '已保存' }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div v-if="modal.show" class="fixed inset-0 modal-overlay z-[100] flex items-center justify-center p-0 md:p-4" @click.self="closeModal">
+            <div class="modal-content rounded-2xl md:rounded-2xl shadow-2xl w-full max-w-[900px] overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh] animate-slide-up md:animate-fade-in">
+
+                <div class="px-4 md:px-6 py-4 md:py-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-purple-50 flex-shrink-0">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-fluent-sm flex-shrink-0">
+                                <i class="fa fa-clock-o text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base md:text-lg text-slate-800">排期配置</h3>
+                                <p class="text-slate-500 text-xs md:text-sm">{{ modal.storeName }}</p>
+                            </div>
+                        </div>
+                        <button @click="closeModal"
+                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition flex items-center justify-center flex-shrink-0">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                        <div class="flex items-center bg-white border border-emerald-200 rounded-lg overflow-hidden shadow-sm h-9 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-400 transition-all">
+                            <span class="bg-emerald-50 text-emerald-600 font-medium text-xs px-2 py-1.5 border-r border-emerald-200 whitespace-nowrap min-w-[64px] text-center">高山预算</span>
+                            <input type="text" v-model="modal.modelBudgets['高山']" class="w-full px-2 py-1.5 text-sm font-bold text-slate-700 outline-none" placeholder="¥">
+                        </div>
+                        <div class="flex items-center bg-white border border-yellow-200 rounded-lg overflow-hidden shadow-sm h-9 focus-within:border-yellow-400 focus-within:ring-1 focus-within:ring-yellow-400 transition-all">
+                            <span class="bg-yellow-50 text-yellow-600 font-medium text-xs px-2 py-1.5 border-r border-yellow-200 whitespace-nowrap min-w-[64px] text-center">V9X预算</span>
+                            <input type="text" v-model="modal.modelBudgets['V9X']" class="w-full px-2 py-1.5 text-sm font-bold text-slate-700 outline-none" placeholder="¥">
+                        </div>
+                        <div class="flex items-center bg-white border border-blue-200 rounded-lg overflow-hidden shadow-sm h-9 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-all">
+                            <span class="bg-blue-50 text-blue-600 font-medium text-xs px-2 py-1.5 border-r border-blue-200 whitespace-nowrap min-w-[64px] text-center">蓝山预算</span>
+                            <input type="text" v-model="modal.modelBudgets['蓝山']" class="w-full px-2 py-1.5 text-sm font-bold text-slate-700 outline-none" placeholder="¥">
+                        </div>
+                        <div class="flex items-center bg-white border border-pink-200 rounded-lg overflow-hidden shadow-sm h-9 focus-within:border-pink-400 focus-within:ring-1 focus-within:ring-pink-400 transition-all">
+                            <span class="bg-pink-50 text-pink-600 font-medium text-xs px-2 py-1.5 border-r border-pink-200 whitespace-nowrap min-w-[64px] text-center">摩卡预算</span>
+                            <input type="text" v-model="modal.modelBudgets['摩卡']" class="w-full px-2 py-1.5 text-sm font-bold text-slate-700 outline-none" placeholder="¥">
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa fa-link text-xs"></i></span>
+                        <input type="text" v-model="modal.url" placeholder="请输入巨量后台网址"
+                            class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-400 outline-none transition shadow-sm">
+                    </div>
+                </div>
+
+                <div class="p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50/50 overscroll-contain" @mouseup="endPaint" @touchend="endPaint">
+
+                    <div class="flex justify-between items-center mb-4 md:mb-5">
+                        <div class="flex items-center gap-2 text-xs md:text-sm text-slate-500">
+                            <i class="fa fa-lightbulb-o text-amber-500"></i>
+                            <span class="hidden md:inline">提示:鼠标拖拽或点击可快速选择时间段</span>
+                            <span class="md:hidden">设置直播时段</span>
+                        </div>
+                        <button @click="addSlot" class="btn-fluent px-4 py-2 rounded-lg text-xs md:text-sm font-medium text-white flex items-center gap-1.5 transition-fluent min-h-[36px]">
+                            <i class="fa fa-plus"></i>
+                            <span>新增</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div v-for="(slot, idx) in modal.slots" :key="idx"
+                            class="slot-card p-4 md:p-5 rounded-xl relative group transition-fluent">
+
+                            <button @click="removeSlot(idx)"
+                                class="absolute top-3 right-3 w-8 h-8 rounded-lg bg-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 transition flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 z-10">
+                                <i class="fa fa-times-circle"></i>
+                            </button>
+
+                            <div class="flex items-center gap-2 md:gap-3 mb-3 md:mb-4 flex-wrap">
+                                <span class="badge-primary text-xs font-bold px-3 py-1 rounded-full">时段 {{ idx + 1 }}</span>
+                                <span class="text-xs md:text-sm font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">
+                                    {{ getSlotTimeDisplay(slot) || '请选择时间' }}
+                                </span>
+                            </div>
+
+                            <div class="mb-4 select-none touch-none hidden md:block" @mouseleave="endPaint">
+                                <div class="time-grid-container">
+                                    <div v-for="i in 48" :key="i" class="grid-cell"
+                                         :class="{ 'active': slot.selectedIndices.has(i-1) }"
+                                         @mousedown.prevent="startPaint(slot, i-1)"
+                                         @mouseenter="onPaintEnter(slot, i-1)"
+                                         :title="idxToTime(i-1)"></div>
+                                </div>
+                                <div class="scale-row">
+                                    <div v-for="h in 24" :key="h" class="scale-item"><span>{{ h-1 }}</span></div>
+                                    <div class="scale-item" style="flex:0; width:0;"><span>24</span></div>
+                                </div>
+                            </div>
+
+                            <div class="md:hidden mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1">
+                                        <label class="text-xs text-slate-400 mb-1 block font-medium">开始时间</label>
+                                        <div class="custom-select-wrapper">
+                                            <select 
+                                                :value="getSlotStart(slot)" 
+                                                @change="e => updateSlotTime(slot, 'start', e.target.value)" 
+                                                class="custom-select">
+                                                <option v-for="opt in timeOptions" :key="'s'+opt.value" :value="opt.value" :disabled="opt.value >= 48">
+                                                    {{ opt.label }}
+                                                </option>
+                                            </select>
+                                            <i class="fa fa-chevron-down select-icon text-xs"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-slate-300 pt-5">
+                                        <i class="fa fa-arrow-right"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="text-xs text-slate-400 mb-1 block font-medium">结束时间</label>
+                                        <div class="custom-select-wrapper">
+                                            <select 
+                                                :value="getSlotEnd(slot)" 
+                                                @change="e => updateSlotTime(slot, 'end', e.target.value)" 
+                                                class="custom-select">
+                                                <option v-for="opt in timeOptions" :key="'e'+opt.value" :value="opt.value" :disabled="opt.value <= getSlotStart(slot)">
+                                                    {{ opt.label }}
+                                                </option>
+                                            </select>
+                                            <i class="fa fa-chevron-down select-icon text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-3 pt-3 border-t border-slate-100">
+                                <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                                    <div class="flex rounded-lg border border-slate-200 overflow-hidden shadow-fluent-sm">
+                                        <button class="type-btn transition" :class="slot.type==='高山'?'active-green':''" @click="slot.type='高山'">
+                                            <i class="fa fa-home mr-1"></i><span>高山直播</span>
+                                        </button>
+                                        <div class="w-px bg-slate-200"></div>
+                                        <button class="type-btn transition" :class="slot.type==='V9X'?'active-yellow':''" @click="slot.type='V9X'">
+                                            <i class="fa fa-bolt mr-1"></i><span>V9X直播</span>
+                                        </button>
+                                        <div class="w-px bg-slate-200"></div>
+                                        <button class="type-btn transition" :class="slot.type==='蓝山'?'active-blue':''" @click="slot.type='蓝山'">
+                                            <i class="fa fa-tint mr-1"></i><span>蓝山直播</span>
+                                        </button>
+                                        <div class="w-px bg-slate-200"></div>
+                                        <button class="type-btn transition" :class="slot.type==='摩卡'?'active-pink':''" @click="slot.type='摩卡'">
+                                            <i class="fa fa-coffee mr-1"></i><span>摩卡直播</span>
+                                        </button>
+                                    </div>
+                                    <div class="flex-1 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-lg px-4 min-h-[44px]">
+                                        <span class="text-slate-400 text-xs mr-2">自动匹配预算:</span>
+                                        <span class="text-sm font-bold font-mono"
+                                            :class="slot.type==='高山'?'text-emerald-600':slot.type==='V9X'?'text-yellow-600':slot.type==='蓝山'?'text-blue-600':'text-pink-600'">
+                                            ¥{{ modal.modelBudgets[slot.type] || '0' }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!--<div class="flex flex-col gap-2" v-if="modal.regionAccounts && modal.regionAccounts.length > 0">-->
+                                <!--    <div class="text-xs text-slate-500 flex items-center gap-1">-->
+                                <!--        <i class="fa fa-user-circle"></i><span>选择账户：</span>-->
+                                <!--    </div>-->
+                                <!--    <div class="flex flex-wrap gap-2">-->
+                                <!--        <label v-for="(accName, accIdx) in modal.regionAccounts" :key="accIdx"-->
+                                <!--            class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition-all min-h-[44px]"-->
+                                <!--            :class="slot.accounts && slot.accounts.includes(accName) ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white hover:border-slate-300'">-->
+                                <!--            <input type="checkbox" :checked="slot.accounts && slot.accounts.includes(accName)"-->
+                                <!--                @change="toggleAccount(slot, accName)"-->
+                                <!--                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">-->
+                                <!--            <span class="text-sm font-medium">{{ accName }}</span>-->
+                                <!--        </label>-->
+                                <!--    </div>-->
+                                <!--</div>-->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="modal.slots.length === 0" class="py-12 text-center empty-state rounded-xl">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa fa-clock-o text-2xl text-slate-400"></i>
+                        </div>
+                        <p class="text-slate-500 font-medium">暂无配置,请点击新增</p>
+                    </div>
+                </div>
+
+                <div class="px-4 md:px-6 py-3 md:py-4 border-t border-slate-100 bg-white flex-shrink-0" style="padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));">
+                    <div class="text-xs text-slate-500 flex items-center gap-2 mb-3 md:hidden overflow-x-auto">
+                        <i class="fa fa-eye text-indigo-500 flex-shrink-0"></i>
+                        <span class="font-medium flex-shrink-0">预览:</span>
+                        <span class="text-indigo-600 font-medium whitespace-nowrap">{{ previewTimeStr || '无配置' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="hidden md:flex text-sm text-slate-500 items-center gap-2">
+                            <i class="fa fa-eye text-indigo-500"></i>
+                            <span class="font-medium">预览:</span>
+                            <span class="text-indigo-600 font-medium">{{ previewTimeStr || '无配置' }}</span>
+                        </div>
+                        <div class="flex gap-3 w-full md:w-auto">
+                            <button @click="closeModal" class="flex-1 md:flex-none px-5 py-3 rounded-xl text-slate-500 text-sm font-medium hover:bg-slate-100 transition min-h-[44px] border border-slate-200 md:border-none">
+                                取消
+                            </button>
+                            <button @click="saveModal" class="flex-1 md:flex-none btn-fluent px-6 py-3 rounded-xl text-sm font-bold text-white shadow-fluent-sm transition-fluent flex items-center justify-center gap-2 min-h-[44px]">
+                                <i class="fa fa-check"></i>确认保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted, onUnmounted, nextTick } = Vue;
+        const generateId = () => 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        createApp({
+            setup() {
+                const jsonData = ref({});
+                const password = ref("030699");
+                const loading = ref(false);
+                const saving = ref(false);
+                const hasLoaded = ref(false);
+                const searchQuery = ref("");
+                const hasUnsavedChanges = ref(false);
+                const modifiedSet = reactive(new Set());
+                const oceanAccounts = ref({});
+                const collapsedRegions = reactive(new Set());
+                const isMobile = ref(window.innerWidth < 769);
+
+                // Generate Time Options for Picker (00:00 to 24:00 in 30min increments)
+                const timeOptions = [];
+                for(let i = 0; i <= 48; i++) {
+                    let h = Math.floor(i / 2);
+                    let m = (i % 2) * 30;
+                    let label = "";
+                    if (h >= 24) label = "24:00";
+                    else label = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+                    timeOptions.push({ value: i, label: label });
+                }
+
+                const handleResize = () => { isMobile.value = window.innerWidth < 769; };
+                onMounted(() => window.addEventListener('resize', handleResize));
+                onUnmounted(() => window.removeEventListener('resize', handleResize));
+
+                const toggleRegion = (name) => {
+                    if (collapsedRegions.has(name)) collapsedRegions.delete(name);
+                    else collapsedRegions.add(name);
+                };
+
+                const markDirty = (item) => {
+                    if (!item) return;
+                    modifiedSet.add(item._id);
+                    hasUnsavedChanges.value = true;
+                };
+
+                const loadOceanAccounts = async () => {
+                    try {
+                        const res = await fetch('/ocean_accounts.json');
+                        if (res.ok) oceanAccounts.value = await res.json();
+                    } catch (e) { console.error('Failed to load ocean accounts:', e); }
+                };
+
+                const modal = reactive({
+                    show: false, storeName: '', currentItem: null, slots: [],
+                    url: '', regionAccounts: [], currentRegion: '',
+                    modelBudgets: { '高山': '', 'V9X': '', '蓝山': '', '摩卡': '' }
+                });
+                const paint = reactive({ active: false, slotRef: null, isErasing: false });
+
+                const ensureIds = (data) => {
+                    for (const region in data) {
+                        data[region].forEach(item => { if (!item._id) item._id = generateId(); });
+                    }
+                    return data;
+                };
+
+                const filteredData = computed(() => {
+                    if (!searchQuery.value.trim()) return jsonData.value;
+                    const query = searchQuery.value.toLowerCase();
+                    const result = {};
+                    for (const [region, rows] of Object.entries(jsonData.value)) {
+                        const matching = rows.filter(row =>
+                            (row.name || '').toLowerCase().includes(query) ||
+                            (row.full_name || '').toLowerCase().includes(query) ||
+                            (row.douyin || '').toString().includes(query)
+                        );
+                        if (matching.length > 0) result[region] = matching;
+                    }
+                    return result;
+                });
+
+                // Desktop sortable
+                const sortableInstances = new Map();
+                const initSortable = (el, regionName) => {
+                    if (!el || searchQuery.value || isMobile.value) return;
+                    if (sortableInstances.has(el)) return;
+                    const sortable = Sortable.create(el, {
+                        handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
+                        onEnd: (evt) => {
+                            if (evt.oldIndex === evt.newIndex) return;
+                            const list = jsonData.value[regionName];
+                            const item = list.splice(evt.oldIndex, 1)[0];
+                            list.splice(evt.newIndex, 0, item);
+                            markDirty(item);
+                        }
+                    });
+                    sortableInstances.set(el, sortable);
+                };
+
+                // Mobile sortable
+                const mobileSortableInstances = new Map();
+                const initSortableMobile = (el, regionName) => {
+                    if (!el || searchQuery.value || !isMobile.value) return;
+                    if (mobileSortableInstances.has(el)) return;
+                    const sortable = Sortable.create(el, {
+                        handle: '.drag-handle',
+                        animation: 200,
+                        ghostClass: 'sortable-ghost',
+                        delay: 150,
+                        delayOnTouchOnly: true,
+                        touchStartThreshold: 5,
+                        onEnd: (evt) => {
+                            if (evt.oldIndex === evt.newIndex) return;
+                            const list = jsonData.value[regionName];
+                            const item = list.splice(evt.oldIndex, 1)[0];
+                            list.splice(evt.newIndex, 0, item);
+                            markDirty(item);
+                        }
+                    });
+                    mobileSortableInstances.set(el, sortable);
+                };
+
+                const loadData = async () => {
+                    loading.value = true;
+                    try {
+                        const res = await fetch(`/api/admin/raw_data?password=${password.value}`);
+                        if (res.ok) { jsonData.value = ensureIds(await res.json()); hasLoaded.value = true; }
+                    } catch (e) {} finally { loading.value = false; }
+                };
+
+                onMounted(() => { loadData(); loadOceanAccounts(); });
+
+                const saveData = async () => {
+                    saving.value = true;
+                    try {
+                        const res = await fetch('/api/admin/save_data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: password.value, data: jsonData.value })
+                        });
+                        if (res.ok) {
+                            if (isMobile.value) {
+                                showToast('✅ 保存成功');
+                            } else {
+                                alert("✅ 保存成功");
+                            }
+                            hasUnsavedChanges.value = false;
+                            modifiedSet.clear();
+                        } else {
+                            isMobile.value ? showToast('❌ 保存失败') : alert("❌ 保存失败");
+                        }
+                    } catch (e) {
+                        isMobile.value ? showToast('❌ 保存失败') : alert("❌ 保存失败");
+                    } finally { saving.value = false; }
+                };
+
+                const showToast = (message) => {
+                    const toast = document.createElement('div');
+                    toast.textContent = message;
+                    toast.style.cssText = `
+                        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        background: rgba(0,0,0,0.8); color: white; padding: 16px 32px;
+                        border-radius: 12px; font-size: 15px; font-weight: 600;
+                        z-index: 9999; backdrop-filter: blur(8px);
+                        animation: fade-in 0.2s ease;
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => {
+                        toast.style.opacity = '0';
+                        toast.style.transition = 'opacity 0.3s';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 1500);
+                };
+
+                const deleteRow = (r, i) => {
+                    if (confirm("删除此行?")) {
+                        const arr = jsonData.value[r];
+                        const idx = arr.indexOf(i);
+                        if (idx > -1) { arr.splice(idx, 1); hasUnsavedChanges.value = true; }
+                    }
+                };
+                const addRow = (r) => {
+                    searchQuery.value = "";
+                    if (!jsonData.value[r]) jsonData.value[r] = [];
+                    const item = { _id: generateId(), full_name: "", name: "", douyin: "", time: "", budget: "", url: "" };
+                    jsonData.value[r].push(item);
+                    markDirty(item);
+                    collapsedRegions.delete(r);
+                };
+                const addRegion = () => {
+                    const n = prompt("输入大区名称");
+                    if (n) { jsonData.value[n] = []; hasUnsavedChanges.value = true; }
+                };
+                const deleteRegion = (r) => {
+                    if (confirm(`删除 ${r}?`)) { delete jsonData.value[r]; hasUnsavedChanges.value = true; }
+                };
+
+                const timeToIdx = (t) => { if (!t) return -1; const [h, m] = t.split(':').map(Number); return h * 2 + (m >= 30 ? 1 : 0); };
+                const idxToTime = (idx) => { let h = Math.floor(idx / 2); let m = (idx % 2) * 30; if (h >= 24) return "24:00"; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; };
+                const parseToIndices = (timeRangeStr) => {
+                    const set = new Set();
+                    if (!timeRangeStr) return set;
+                    timeRangeStr.split(',').forEach(range => {
+                        const parts = range.trim().split('-');
+                        if (parts.length === 2) {
+                            const start = timeToIdx(parts[0]); const end = timeToIdx(parts[1]);
+                            if (start !== -1 && end !== -1) { for (let i = start; i < end; i++) set.add(i); }
+                        }
+                    });
+                    return set;
+                };
+                const indicesToString = (set) => {
+                    if (set.size === 0) return "";
+                    const sorted = Array.from(set).sort((a, b) => a - b);
+                    const ranges = []; let start = sorted[0]; let prev = sorted[0];
+                    for (let i = 1; i < sorted.length; i++) {
+                        if (sorted[i] !== prev + 1) { ranges.push(`${idxToTime(start)}-${idxToTime(prev + 1)}`); start = sorted[i]; }
+                        prev = sorted[i];
+                    }
+                    ranges.push(`${idxToTime(start)}-${idxToTime(prev + 1)}`);
+                    return ranges.join(', ');
+                };
+
+                // Helper functions for Mobile Time Picker
+                const getSlotStart = (slot) => {
+                    if (slot.selectedIndices.size === 0) return 0; // Default 00:00
+                    return Math.min(...Array.from(slot.selectedIndices));
+                };
+
+                const getSlotEnd = (slot) => {
+                    if (slot.selectedIndices.size === 0) return 0;
+                    // End time is max index + 1 (because index 0 is 00:00-00:30, so end time is 00:30 which is index 1 in value logic)
+                    return Math.max(...Array.from(slot.selectedIndices)) + 1;
+                };
+
+                const updateSlotTime = (slot, type, value) => {
+                    let start = getSlotStart(slot);
+                    let end = getSlotEnd(slot);
+                    const val = parseInt(value);
+
+                    if (type === 'start') {
+                        start = val;
+                        // If start is after or equal to end, auto push end
+                        if (start >= end) end = start + 1; 
+                        if (end > 48) end = 48; // Cap at 24:00
+                    } else {
+                        end = val;
+                        // If end is before or equal to start, auto push start back
+                        if (end <= start) start = end - 1;
+                        if (start < 0) start = 0;
+                    }
+
+                    // Rebuild indices
+                    slot.selectedIndices.clear();
+                    for(let i = start; i < end; i++) {
+                        slot.selectedIndices.add(i);
+                    }
+                };
+
+                const startPaint = (slot, idx) => { paint.active = true; paint.slotRef = slot; paint.isErasing = slot.selectedIndices.has(idx); toggleIndex(slot, idx, paint.isErasing); };
+                const onPaintEnter = (slot, idx) => { if (!paint.active || paint.slotRef !== slot) return; toggleIndex(slot, idx, paint.isErasing); };
+                const endPaint = () => { paint.active = false; paint.slotRef = null; };
+                const toggleIndex = (slot, idx, isErase) => { if (isErase) slot.selectedIndices.delete(idx); else slot.selectedIndices.add(idx); };
+
+                const getSlotTimeDisplay = (slot) => indicesToString(slot.selectedIndices);
+
+                const parseRowData = (timeStr, budgetStr, accountsList) => {
+                    const resultSlots = [];
+                    const budgets = (budgetStr || "").toString().split('/');
+                    const regex = /((?:\d{1,2}:\d{2}-\d{1,2}:\d{2}(?:,\s*)?)+)\s*(?:\(([^)]*)\))?/g;
+                    let match; let i = 0;
+                    while ((match = regex.exec(timeStr)) !== null) {
+                        let typeVal = match[2] || '高山';
+                        const slotAccounts = (accountsList && accountsList[i]) ? accountsList[i] : [];
+                        resultSlots.push({
+                            selectedIndices: parseToIndices(match[1]),
+                            type: typeVal,
+                            budget: budgets[i] ? budgets[i].trim() : '',
+                            accounts: Array.isArray(slotAccounts) ? slotAccounts : []
+                        });
+                        i++;
+                    }
+                    return resultSlots;
+                };
+
+                const previewTimeStr = computed(() => {
+                    return modal.slots.map((s, i) => {
+                        const num = ['①', '②', '③', '④', '⑤'][i] || (i + 1) + '.';
+                        const timeText = indicesToString(s.selectedIndices);
+                        if (!timeText) return '';
+                        const type = s.type ? `(${s.type})` : '';
+                        return `${num} ${timeText} ${type}`;
+                    }).filter(s => s).join('  ');
+                });
+                const previewBudgetStr = computed(() => modal.slots.map(s => modal.modelBudgets[s.type] || '0').join('/'));
+
+                const openEditModal = (item, regionName) => {
+                    modal.currentItem = item;
+                    modal.storeName = item.name || item.full_name;
+                    modal.url = item.url || '';
+                    modal.currentRegion = regionName;
+                    modal.regionAccounts = Object.keys(oceanAccounts.value[regionName] || {});
+                    modal.slots = parseRowData(item.time, item.budget, item.accounts);
+                    modal.modelBudgets = item.modelBudgets ? JSON.parse(JSON.stringify(item.modelBudgets)) : { '高山': '', 'V9X': '', '蓝山': '', '摩卡': '' };
+                    if (modal.slots.length === 0) {
+                    
+                    if (!item.modelBudgets && item.budget) {
+                        const oldBudgets = item.budget.toString().split('/');
+                        modal.slots.forEach((s, idx) => {
+                            if (oldBudgets[idx] && !modal.modelBudgets[s.type]) {
+                                modal.modelBudgets[s.type] = oldBudgets[idx].trim();
+                            }
+                        });
+                    }
+                        modal.slots.push({ selectedIndices: new Set(), type: '高山', budget: '', accounts: [] });
+                    }
+                    modal.show = true;
+                    if (isMobile.value) document.body.style.overflow = 'hidden';
+                };
+                const addSlot = () => modal.slots.push({ selectedIndices: new Set(), type: '高山', budget: '', accounts: [] });
+                const removeSlot = (idx) => modal.slots.splice(idx, 1);
+                const closeModal = () => {
+                    modal.show = false; paint.active = false;
+                    document.body.style.overflow = '';
+                };
+                const saveModal = () => {
+                    if (modal.currentItem) {
+                        modal.currentItem.modelBudgets = JSON.parse(JSON.stringify(modal.modelBudgets));
+                        modal.currentItem.time = previewTimeStr.value;
+                        modal.currentItem.budget = previewBudgetStr.value;
+                        modal.currentItem.url = modal.url;
+                        modal.currentItem.accounts = modal.slots.map(s => s.accounts || []);
+                        markDirty(modal.currentItem);
+                    }
+                    modal.show = false;
+                    document.body.style.overflow = '';
+                };
+                const toggleAccount = (slot, accName) => {
+                    if (!slot.accounts) slot.accounts = [];
+                    const idx = slot.accounts.indexOf(accName);
+                    if (idx > -1) slot.accounts.splice(idx, 1);
+                    else slot.accounts.push(accName);
+                };
+
+                const replaceAdvId = (url, newAdvId) => {
+                    if (!url) return url;
+                    // 如果原链接包含 aadvid=，直接替换；如果不包含，则追加到末尾
+                    if (url.match(/aadvid=[^&]+/)) {
+                        return url.replace(/aadvid=[^&]+/, 'aadvid=' + newAdvId);
+                    } else {
+                        const separator = url.includes('?') ? '&' : '?';
+                        return url + separator + 'aadvid=' + newAdvId;
+                    }
+                };
+
+                const handleUrlClick = (item, regionName, targetType) => {
+                    if (!item.url || !item.url.trim()) {
+                        isMobile.value ? showToast('未配置跳转链接') : alert('未配置跳转链接');
+                        return;
+                    }
+
+                    let targetUrl = item.url; // 获取手动填写的原始链接
+
+                    // 1. 如果点击的是【高山】，直接使用填写的原链接跳转，不做任何修改
+                    if (targetType === '高山') {
+                        if (isMobile.value) showToast(`⚡️ 正在打开高山原链接`);
+                        window.open(targetUrl, '_blank');
+                        return; 
+                    }
+
+                    // 2. 如果点击的是【V9X】（或其他），去匹配 json 中的账户
+                    const regionAccs = oceanAccounts.value[regionName] || {};
+                    let matchedId = null;
+
+                    // 优先找 "V9X户"，其次找 "V9X专项"，最后模糊匹配
+                    if (regionAccs[`${targetType}户`]) {
+                        matchedId = regionAccs[`${targetType}户`];
+                    } else if (regionAccs[`${targetType}专项`]) {
+                        matchedId = regionAccs[`${targetType}专项`];
+                    } else {
+                        for (const key in regionAccs) {
+                            if (key.includes(targetType)) {
+                                matchedId = regionAccs[key];
+                                break;
+                            }
+                        }
+                    }
+
+                    // 如果找到了 V9X 账户，替换 aadvid
+                    if (matchedId) {
+                        targetUrl = replaceAdvId(targetUrl, matchedId);
+                        if (isMobile.value) showToast(`⚡️ 已切换至 ${targetType} 账户`);
+                    } else {
+                        // 如果没找到，弹窗提示并使用原链接兜底
+                        const msg = `⚠️ 未在配置中找到【${regionName}】的【${targetType}】账户，将直接打开原链接`;
+                        if (isMobile.value) showToast(msg);
+                        else alert(msg);
+                    }
+
+                    window.open(targetUrl, '_blank');
+                };
+
+                return {
+                    jsonData, loading, saving, hasLoaded, searchQuery, filteredData, oceanAccounts,
+                    saveData, addRow, deleteRow, addRegion, deleteRegion, handleUrlClick, showToast,
+                    modal, openEditModal, addSlot, removeSlot, closeModal, saveModal, toggleAccount,
+                    previewTimeStr, startPaint, onPaintEnter, endPaint,
+                    getSlotTimeDisplay, idxToTime, initSortable, initSortableMobile,
+                    hasUnsavedChanges, modifiedSet, markDirty,
+                    collapsedRegions, toggleRegion, isMobile,
+                    timeOptions, getSlotStart, getSlotEnd, updateSlotTime
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
