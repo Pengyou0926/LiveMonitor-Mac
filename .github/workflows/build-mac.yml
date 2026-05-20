@@ -1,0 +1,46 @@
+name: Build Mac App
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: 获取项目代码
+      uses: actions/checkout@v4
+
+    - name: 配置 Python 环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: 安装依赖库
+      run: |
+        python -m pip install --upgrade pip
+        pip install fastapi uvicorn requests pystray pillow pyinstaller
+
+    - name: 执行 PyInstaller 打包
+      run: |
+        pyinstaller --name "LiveMonitor" \
+          --add-data "index.html:." \
+          --add-data "admin.html:." \
+          --add-data "app.ico:." \
+          --windowed \
+          --icon "app.ico" \
+          --noconfirm \
+          server-mac.py
+
+    - name: 压缩应用程序 (防止破坏 Mac 权限)
+      run: |
+        cd dist
+        zip -r LiveMonitor-Mac.zip LiveMonitor.app
+
+    - name: 上传打包结果
+      uses: actions/upload-artifact@v4
+      with:
+        name: LiveMonitor-Mac-Release
+        path: dist/LiveMonitor-Mac.zip
